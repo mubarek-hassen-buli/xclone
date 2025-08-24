@@ -14,7 +14,7 @@ const startServer = async () => {
       console.log("Server running on PORT 5001")
     );
   } catch (error) {
-    console.log(error);
+    console.log("Error starting server",error);
     process.exit(1);
   }
 };

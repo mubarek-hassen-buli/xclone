@@ -15,8 +15,8 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-app.use("api/users", userRouters);
-app.use("api/posts", postRouters);
+app.use("/api/users", userRouters);
+app.use("/api/posts", postRouters);
 // error handling middleware
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);

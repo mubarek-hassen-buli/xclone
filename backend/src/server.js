@@ -3,6 +3,7 @@ import cors from "cors";
 import { clerkMiddleware } from "@clerk/express";
 import postRouters from "./routes/post.route.js";
 import userRouters from "./routes/user.route.js";
+import commentRouters from "./routes/comment.route.js";
 import { ENV } from "./config/env.js";
 import { connectDB } from "./config/db.js";
 const app = express();
@@ -17,6 +18,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/users", userRouters);
 app.use("/api/posts", postRouters);
+app.use("/api/comments", commentRouters);
 // error handling middleware
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);

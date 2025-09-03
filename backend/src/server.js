@@ -21,7 +21,7 @@ app.get("/", (req, res) => {
 app.use("/api/users", userRouters);
 app.use("/api/posts", postRouters);
 app.use("/api/comments", commentRouters);
-app.use("/api/notifications", notificationRouters)
+app.use("/api/notifications", notificationRouters);
 // error handling middleware
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
@@ -30,9 +30,12 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
   try {
     await connectDB();
-    app.listen(ENV.PORT || 5001, () =>
-      console.log("Server running on PORT 5001")
-    );
+    //listen for local development
+    if (ENV.NODE_ENV !== "production") {
+      app.listen(ENV.PORT || 5001, () =>
+        console.log("Server running on PORT 5001")
+      );
+    }
   } catch (error) {
     console.log("Error starting server", error);
     process.exit(1);
@@ -40,3 +43,5 @@ const startServer = async () => {
 };
 
 startServer();
+//export for vercel
+export default app;

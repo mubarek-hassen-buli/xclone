@@ -19,7 +19,7 @@ import PostsList from "@/components/PostsList";
 import { usePosts } from "@/hooks/usePosts";
 
 const ProfileScreen = () => {
-  const { currentUser, isLoading } = useCurrentUser();
+  const { currentUser, isLoading , error} = useCurrentUser();
   const insets = useSafeAreaInsets();
   const {
     posts: userPosts,
@@ -28,11 +28,20 @@ const ProfileScreen = () => {
   } = usePosts(currentUser?.username);
   if (isLoading) {
     return (
-      <View className="flex-1 bg-white items-center justify-center">
+      <SafeAreaView className="flex-1 bg-white items-center justify-center">
         <ActivityIndicator size="large" color="#1DA1F2" />
-      </View>
+      </SafeAreaView>
     );
   }
+  if (error || !currentUser) {
+    return (
+     <SafeAreaView className="flex-1 bg-white items-center justify-center px-6">
+       <Text className="text-gray-600">
+         {error ? "Failed to load profile." : "No user is signed in."}
+       </Text>
+     </SafeAreaView>
+   );
+ }
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Header */}

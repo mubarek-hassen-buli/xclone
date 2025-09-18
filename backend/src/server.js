@@ -1,4 +1,5 @@
 import express from "express";
+import helmet from "helmet";
 import cors from "cors";
 import { clerkMiddleware } from "@clerk/express";
 import postRouters from "./routes/post.route.js";
@@ -10,6 +11,7 @@ import { ENV } from "./config/env.js";
 import { connectDB } from "./config/db.js";
 const app = express();
 
+app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(clerkMiddleware());

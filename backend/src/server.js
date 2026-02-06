@@ -6,6 +6,7 @@ import postRouters from "./routes/post.route.js";
 import userRouters from "./routes/user.route.js";
 import commentRouters from "./routes/comment.route.js";
 import notificationRouters from "./routes/notification.route.js";
+import messageRouters from "./routes/message.route.js";
 import { arcjetMiddleware } from "./middleware/arcjet.middleware.js";
 import { ENV } from "./config/env.js";
 import { connectDB } from "./config/db.js";
@@ -24,6 +25,7 @@ app.use("/api/users", userRouters);
 app.use("/api/posts", postRouters);
 app.use("/api/comments", commentRouters);
 app.use("/api/notifications", notificationRouters);
+app.use("/api/messages", messageRouters);
 // error handling middleware
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);

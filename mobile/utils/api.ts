@@ -57,6 +57,16 @@ export const userApi = {
     api.put("/users/profile", data),
 };
 
+export const messageApi = {
+  getConversations: (api: AxiosInstance) => api.get("/messages/conversations"),
+  getMessages: (api: AxiosInstance, conversationId: string) =>
+    api.get(`/messages/conversations/${conversationId}`),
+  sendMessage: (api: AxiosInstance, data: { recipientId: string; content: string }) =>
+    api.post("/messages/send", data),
+  deleteConversation: (api: AxiosInstance, conversationId: string) =>
+    api.delete(`/messages/conversations/${conversationId}`),
+};
+
 export const postApi = {
   createPost: (api: AxiosInstance, data: { content: string; image?: string }) =>
     api.post("/posts", data),

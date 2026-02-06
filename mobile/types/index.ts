@@ -51,3 +51,21 @@ export interface Notification {
   };
   createdAt: string;
 }
+
+export interface Message {
+  _id: string;
+  conversation: string;
+  sender: User;
+  content: string;
+  read: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Conversation {
+  _id: string;
+  participants: User[];
+  lastMessage?: Message;
+  createdAt: string;
+  updatedAt: string;
+}

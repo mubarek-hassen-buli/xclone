@@ -2,6 +2,7 @@ import { Notification } from "@/types";
 import { formatDate } from "@/utils/formatters";
 import { Feather } from "@expo/vector-icons";
 import { View, Text, Alert, Image, TouchableOpacity } from "react-native";
+import { router } from "expo-router";
 
 interface NotificationCardProps {
   notification: Notification;
@@ -55,20 +56,26 @@ export const NotificationCard = ({
   return (
     <View className="border-b border-gray-100 bg-white">
       <View className="flex-row p-4">
-        <View className="relative mr-3">
+        <TouchableOpacity 
+          onPress={() => router.push(`/profile?username=${notification.from.username}`)}
+          className="relative mr-3"
+        >
           <Image
-            source={{ uri: notification.from.profilePicture }}
+            source={{ uri: notification.from.profilePicture || "https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png" }}
             className="size-12 rounded-full"
           />
 
           <View className="abolute -bottom-1 -right-1 size-6 bg-white items-center justify-center">
             {getNotificationIcon()}
           </View>
-        </View>
+        </TouchableOpacity>
 
         <View className="flex-1">
           <View className="flex-row items-start justify-between mb-1">
-            <View className="flex-1">
+            <TouchableOpacity 
+              className="flex-1"
+              onPress={() => router.push(`/profile?username=${notification.from.username}`)}
+            >
               <Text className="text-gray-900 text-base leading-5 mb-1">
                 <Text className="font-semibold">
                   {notification.from.firstName} {notification.from.lastName}
@@ -76,7 +83,7 @@ export const NotificationCard = ({
                 <Text className="text-gray-500"> @{notification.from.username}</Text>
               </Text>
               <Text className="text-gray-700 text-sm mb-2">{getNotificationText()}</Text>
-            </View>
+            </TouchableOpacity>
 
             <TouchableOpacity className="ml-2 p-1" onPress={handleDelete}>
               <Feather name="trash" size={16} color="#E0245E" />

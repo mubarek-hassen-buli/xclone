@@ -2,6 +2,7 @@ import { Post, User } from "@/types";
 import { formatDate, formatNumber } from "@/utils/formatters";
 import { AntDesign, Feather } from "@expo/vector-icons";
 import { View, Text, Alert, Image, TouchableOpacity } from "react-native";
+import { router } from "expo-router";
 
 interface PostCardProps {
   post: Post;
@@ -36,21 +37,28 @@ const PostCard = ({
   return (
     <View className="border-b border-gray-100 bg-white">
       <View className="flex-row p-4">
-        <Image
-          source={{ uri: post.user.profilePicture || "" }}
-          className="w-12 h-12 rounded-full mr-3"
-        />
+        <TouchableOpacity 
+          onPress={() => router.push(`/profile?username=${post.user.username}`)}
+        >
+          <Image
+            source={{ uri: post.user.profilePicture || "https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png" }}
+            className="w-12 h-12 rounded-full mr-3"
+          />
+        </TouchableOpacity>
 
         <View className="flex-1">
           <View className="flex-row items-center justify-between mb-1">
-            <View className="flex-row items-center">
+            <TouchableOpacity 
+              className="flex-row items-center"
+              onPress={() => router.push(`/profile?username=${post.user.username}`)}
+            >
               <Text className="font-bold text-gray-900 mr-1">
                 {post.user.firstName} {post.user.lastName}
               </Text>
-              <Text className="text-gray-500 ml-1">
+              <Text className="text-gray-500 ml-1" numberOfLines={1}>
                 @{post.user.username} · {formatDate(post.createdAt)}
               </Text>
-            </View>
+            </TouchableOpacity>
             {isOwnPost && (
               <TouchableOpacity onPress={handleDelete}>
                 <Feather name="trash" size={20} color="#657786" />

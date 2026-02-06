@@ -17,10 +17,19 @@ import { useConversations, useConversationMessages } from "@/hooks/useMessages";
 import { useUser } from "@clerk/clerk-expo";
 import { Conversation, Message, User } from "@/types";
 import { formatDistanceToNow } from "date-fns";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect } from "react";
 
 const MessagesScreen = () => {
   const insets = useSafeAreaInsets();
   const { user: clerkUser } = useUser();
+  const params = useLocalSearchParams<{ 
+    recipientId?: string; 
+    name?: string; 
+    avatar?: string;
+    username?: string;
+  }>();
+  
   const [searchText, setSearchText] = useState("");
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -33,6 +42,48 @@ const MessagesScreen = () => {
     isRefetching: isRefetchingConversations,
     deleteConversation,
   } = useConversations();
+
+  // Handle incoming message request from profile
+  useEffect(() => {
+    if (params.recipientId && !isLoadingConversations) {
+      // 1. Check if conversation already exists
+      const existing = conversations.find(c => 
+        c.participants.some(p => p._id === params.recipientId)
+      );
+
+      if (existing) {
+        setSelectedConversation(existing);
+        setIsChatOpen(true);
+      } else if (params.name && params.username) {
+        // 2. Prepare a "new" conversation object for the UI
+        // This will be saved to the DB once the first message is sent
+        const mockUser: User = {
+          _id: params.recipientId,
+          username: params.username,
+          firstName: params.name.split(" ")[0],
+          lastName: params.name.split(" ").slice(1).join(" "),
+          profilePicture: params.avatar || "",
+          followers: [],
+          following: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        const mockConversation: Conversation = {
+          _id: "new", // Special flag for new conversation
+          participants: [mockUser, {} as User], // placeholder for current user
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        
+        setSelectedConversation(mockConversation);
+        setIsChatOpen(true);
+      }
+      
+      // Clear params to avoid re-opening on hot reloads
+      router.setParams({ recipientId: undefined, name: undefined, avatar: undefined, username: undefined });
+    }
+  }, [params.recipientId, conversations, isLoadingConversations]);
 
   const {
     messages,
@@ -77,20 +128,41 @@ const MessagesScreen = () => {
 
   const handleSendMessage = () => {
     if (newMessage.trim() && selectedConversation && clerkUser) {
-      const otherUser = selectedConversation.participants.find(
-        (p) => p.username !== clerkUser.username
-      );
-      if (otherUser) {
+      let recipientId: string | undefined;
+
+      if (selectedConversation._id === "new") {
+        // If it's a new conversation, the recipient is the other user we prepared
+        const other = selectedConversation.participants.find(p => p._id !== "placeholder");
+        recipientId = other?._id;
+      } else {
+        const otherUser = selectedConversation.participants.find(
+          (p) => p.username !== clerkUser.username
+        );
+        recipientId = otherUser?._id;
+      }
+
+      if (recipientId) {
         sendMessageMutation({
-          recipientId: otherUser._id,
+          recipientId,
           content: newMessage.trim(),
         });
         setNewMessage("");
+        
+        // If it was a 'new' conversation, it will be refetched from the server
+        // we can close and reopen or just let the invalidation handle it.
+        // For now, let's just clear the placeholder if it was new.
+        if (selectedConversation._id === "new") {
+          setIsChatOpen(false);
+          setSelectedConversation(null);
+        }
       }
     }
   };
 
   const getOtherUser = (participants: User[]) => {
+    if (selectedConversation?._id === "new") {
+       return participants.find(p => p._id !== "placeholder") || participants[0];
+    }
     return participants.find((p) => p.username !== clerkUser?.username) || participants[0];
   };
 
@@ -166,10 +238,17 @@ const MessagesScreen = () => {
                 onPress={() => openConversation(conversation)}
                 onLongPress={() => handleDelete(conversation._id)}
               >
-                <Image
-                  source={{ uri: otherUser.profilePicture || "https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png" }}
-                  className="size-12 rounded-full mr-3"
-                />
+                <TouchableOpacity 
+                   onPress={(e) => {
+                     e.stopPropagation();
+                     router.push(`/profile?username=${otherUser.username}`);
+                   }}
+                >
+                  <Image
+                    source={{ uri: otherUser.profilePicture || "https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png" }}
+                    className="size-12 rounded-full mr-3"
+                  />
+                </TouchableOpacity>
 
                 <View className="flex-1">
                   <View className="flex-row items-center justify-between mb-1">
@@ -213,18 +292,26 @@ const MessagesScreen = () => {
                   <TouchableOpacity onPress={closeChatModal} className="mr-3">
                     <Feather name="arrow-left" size={24} color="#1DA1F2" />
                   </TouchableOpacity>
-                  <Image
-                    source={{ uri: otherUser.profilePicture || "https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png" }}
-                    className="size-10 rounded-full mr-3"
-                  />
-                  <View className="flex-1">
-                    <View className="flex-row items-center">
-                      <Text className="font-semibold text-gray-900 mr-1">
-                        {otherUser.firstName} {otherUser.lastName}
-                      </Text>
+                  <TouchableOpacity 
+                    className="flex-row items-center flex-1"
+                    onPress={() => {
+                       closeChatModal();
+                       router.push(`/profile?username=${otherUser.username}`);
+                    }}
+                  >
+                    <Image
+                      source={{ uri: otherUser.profilePicture || "https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png" }}
+                      className="size-10 rounded-full mr-3"
+                    />
+                    <View className="flex-1">
+                      <View className="flex-row items-center">
+                        <Text className="font-semibold text-gray-900 mr-1">
+                          {otherUser.firstName} {otherUser.lastName}
+                        </Text>
+                      </View>
+                      <Text className="text-gray-500 text-sm">@{otherUser.username}</Text>
                     </View>
-                    <Text className="text-gray-500 text-sm">@{otherUser.username}</Text>
-                  </View>
+                  </TouchableOpacity>
                 </View>
               );
             })()}

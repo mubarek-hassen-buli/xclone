@@ -53,8 +53,12 @@ export const userApi = {
   getCurrentUser: (api: AxiosInstance) => api.get("/users/me"),
   searchUsers: (api: AxiosInstance, query: string) =>
     api.get(`/users/search?query=${encodeURIComponent(query)}`),
+  getUserProfile: (api: AxiosInstance, username: string) =>
+    api.get(`/users/profile/${username}`),
   updateProfile: (api: AxiosInstance, data: any) =>
     api.put("/users/profile", data),
+  followUser: (api: AxiosInstance, targetUserId: string) =>
+    api.post(`/users/follow/${targetUserId}`),
 };
 
 export const messageApi = {

@@ -9,8 +9,17 @@ export const useUserSync = () => {
 
   const syncUserMutation = useMutation({
     mutationFn: () => userApi.syncUser(api),
-    onSuccess: (response: any) => console.log("User synced successfully:", response.data.user),
-    onError: (error) => console.error("User sync failed:", error),
+    onSuccess: (response: any) => console.log("✅ User synced:", response.data.message),
+    onError: (error: any) => {
+      console.error("❌ User sync failed:", error);
+      console.error("Response data:", error.response?.data);
+      console.error("Status:", error.response?.status);
+      
+      // Show user-friendly message
+      if (error.response?.status === 500) {
+        console.error("Server error - this might be a configuration issue on the backend");
+      }
+    },
   });
 
   // auto-sync user when signed in

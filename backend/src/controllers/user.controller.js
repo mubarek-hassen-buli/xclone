@@ -22,8 +22,21 @@ export const updateProfile = asyncHandler(async (req, res) => {
 });
 export const syncUser = asyncHandler(async (req, res) => {
   try {
+    // Validate Clerk configuration
+    if (!process.env.CLERK_SECRET_KEY) {
+      console.error("❌ CLERK_SECRET_KEY is not configured!");
+      return res.status(500).json({ 
+        error: "Server configuration error: Missing Clerk API key" 
+      });
+    }
+
     const { userId } = getAuth(req);
     console.log("🔍 Syncing user with Clerk ID:", userId);
+    
+    if (!userId) {
+      console.error("❌ No userId found in auth context");
+      return res.status(401).json({ error: "Unauthorized" });
+    }
     
     //checking if the user exists in the mongodb
     const existingUser = await User.findOne({ clerkId: userId });
@@ -66,9 +79,23 @@ export const syncUser = asyncHandler(async (req, res) => {
     res.status(201).json({ user, message: "User created successfully" });
   } catch (error) {
     console.error("❌ Error in syncUser:", error.message);
+    console.error("Error details:", {
+      name: error.name,
+      code: error.code,
+      status: error.status
+    });
+    
     if (error.code === 11000) {
       console.error("Duplicate key error details:", error.keyValue);
     }
+    
+    // More specific error messages
+    if (error.status === 401 || error.message?.includes("authentication")) {
+      return res.status(500).json({ 
+        error: "Clerk authentication failed - check API keys" 
+      });
+    }
+    
     res.status(500).json({ error: error.message || "Failed to sync user" });
   }
 });

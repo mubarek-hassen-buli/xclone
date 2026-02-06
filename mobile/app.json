@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Twitty",
-    "slug": "mobile",
+    "slug": "twitty",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

@@ -21,24 +21,56 @@ export const updateProfile = asyncHandler(async (req, res) => {
   res.status(200).json({ user });
 });
 export const syncUser = asyncHandler(async (req, res) => {
-  const { userId } = getAuth(req);
-  //checking if the user exists in the mongodb
-  const existingUser = await User.findOne({ clerkId: userId });
-  if (existingUser) res.status(200).json({ message: "User already exists" });
-  //creating new user from clerk data
-  const clerkUser = await clerkClient.users.getUser(userId);
+  try {
+    const { userId } = getAuth(req);
+    console.log("🔍 Syncing user with Clerk ID:", userId);
+    
+    //checking if the user exists in the mongodb
+    const existingUser = await User.findOne({ clerkId: userId });
+    if (existingUser) {
+      console.log("✅ User already exists:", existingUser.username);
+      return res.status(200).json({ message: "User already exists" });
+    }
+    
+    console.log("📞 Fetching user from Clerk...");
+    //creating new user from clerk data
+    const clerkUser = await clerkClient.users.getUser(userId);
+    console.log("✅ Clerk user fetched:", clerkUser.emailAddresses[0]?.emailAddress);
 
-  const userData = {
-    clerkId: userId,
-    email: clerkUser.emailAddresses[0].emailAddress,
-    firstName: clerkUser.firstName || "",
-    lastName: clerkUser.lastName || "",
-    username: clerkUser.emailAddresses[0].emailAddress.split("@")[0],
-    profilePicture: clerkUser.imageUrl || "",
-  };
-  const user = await User.create(userData);
+    // More robust username generation:
+    // 1. Use Clerk username if it exists
+    // 2. Fallback to email prefix
+    // 3. Ensure it's unique by adding a random suffix if needed
+    let baseUsername = clerkUser.username || clerkUser.emailAddresses[0]?.emailAddress.split("@")[0] || "user";
+    
+    // Check for username collision in our DB
+    const usernameExists = await User.findOne({ username: baseUsername });
+    let finalUsername = baseUsername;
+    if (usernameExists && usernameExists.clerkId !== userId) {
+      finalUsername = `${baseUsername}${Math.floor(1000 + Math.random() * 9000)}`;
+    }
 
-  res.status(201).json({ user, message: "User created successfully" });
+    const userData = {
+      clerkId: userId,
+      email: clerkUser.emailAddresses[0]?.emailAddress,
+      firstName: clerkUser.firstName || "User",
+      lastName: clerkUser.lastName || "",
+      username: finalUsername,
+      profilePicture: clerkUser.imageUrl || "",
+    };
+    
+    console.log("💾 Creating new user in MongoDB:", userData.username);
+    const user = await User.create(userData);
+    console.log("✅ User created successfully:", user._id);
+
+    res.status(201).json({ user, message: "User created successfully" });
+  } catch (error) {
+    console.error("❌ Error in syncUser:", error.message);
+    if (error.code === 11000) {
+      console.error("Duplicate key error details:", error.keyValue);
+    }
+    res.status(500).json({ error: error.message || "Failed to sync user" });
+  }
 });
 
 export const getCurrentUser = asyncHandler(async (req, res) => {

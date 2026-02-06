@@ -153,3 +153,39 @@ export const followUser = asyncHandler(async (req, res) => {
       : "User followed successfully",
   });
 });
+
+export const getUserById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const user = await User.findById(id);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  res.status(200).json({ user });
+});
+
+export const searchUsers = asyncHandler(async (req, res) => {
+  let { query } = req.query;
+  console.log("🔍 Search query received:", query);
+
+  if (!query || query.trim().length === 0) {
+    return res.status(200).json({ users: [] });
+  }
+
+  // Strip leading '@' if present (common in Twitter searches)
+  const cleanQuery = query.trim().startsWith("@") ? query.trim().slice(1) : query.trim();
+  console.log("🧹 Cleaned search query:", cleanQuery);
+
+  const users = await User.find({
+    $or: [
+      { username: { $regex: cleanQuery, $options: "i" } },
+      { firstName: { $regex: cleanQuery, $options: "i" } },
+      { lastName: { $regex: cleanQuery, $options: "i" } },
+    ],
+  })
+    .select("username firstName lastName profilePicture bio followers")
+    .limit(20);
+
+  console.log(`✅ Found ${users.length} users for query: ${cleanQuery}`);
+
+  res.status(200).json({ users });
+});

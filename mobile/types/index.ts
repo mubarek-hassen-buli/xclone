@@ -4,6 +4,13 @@ export interface User {
   firstName: string;
   lastName: string;
   profilePicture?: string;
+  bannerImage?: string;
+  bio?: string;
+  location?: string;
+  followers?: string[];
+  following?: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Comment {
